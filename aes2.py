@@ -25,46 +25,54 @@ class AES():
     [0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E],
     [0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF],
     [0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16]]
-        self.rcon=[0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36, 0x6c, 0xd8, 0xab, 0x4d]
+        self.rcon=[0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000, 0x1B000000, 0x36000000, 0x6c000000, 0xd8000000, 0xab000000, 0x4d000000]
         self.m=0x11b
         self.key=key
         self.keylen=len(self.key)
-        if self.keylen==32:
-            self.rounds=10
-        elif self.keylen==48:
-            self.rounds=12
-        elif self.keylen==64:
-            self.rounds=14
+        if self.keylen==32 or self.keylen==48 and self.keylen==64:
+            pass
         else:
             raise Exception("Invalid key length")
-        self.key_expansion_128()
+        self.rounds=(self.keylen//8)+6
+        self.key_expansion()
     
-    def key_expansion_128(self):
+    def key_expansion(self):
         self.w=[]
-        for i in range(4):
-            self.w.append(self.key[8*i:8*i+8])
-        for i in range(4,44):
+        for i in range(len(self.key)//8):
+            self.w.append(self.key[i*8:i*8+8])
+
+        for i in range(len(self.key)//8, 4*(self.rounds+1)):
             temp=self.w[i-1]
             if i%4==0:
                 temp=self.sub_word(self.rot_word(temp))
-                temp=self.xor(temp,self.rcon[i//4-1])
-            self.w.append(self.xor(self.w[i-4],temp))
+
+                temp=self.xor(temp, hex(self.rcon[i//4-1])[2:].zfill(8))
+            self.w.append(self.xor(self.w[i-4], temp))
+
 
     def xor(self, a, b):
         start=len(a)
-        if type(a)==str:
-            a=int(a,16)
-        if type(b)==str:
-            b=int(b,16)
+        if len(a)!=len(b):
+            raise Exception("xor: Length of a and b must be same")
+        a,b=int(a,16),int(b,16)
         return hex(a^b)[2:].zfill(start)
+    
+    def rot_word(self, word):
+        return word[2:]+word[:2]
+    
+    def sub_word(self, word):
+        for i in range(0,len(word),2):
+            x,y=word[i],word[i+1]
+            x,y=int(x,16),int(y,16)
+            x,y=hex(self.sbox[x][y])[2:].zfill(2)[0],hex(self.sbox[x][y])[2:].zfill(2)[1]
+            word=word[:i]+x+y+word[i+2:]
+        return word
 
 
 state="0189fe7623abdc5445cdba3267ef9810" #input("Enter the 128 bit data block in hex: ")
-key="0f470caf15d9b77f71e8ad67c959d698" #input("Enter the 128/192/256 bit key in hex: ")
-print(len(key)*4)
+key="0f470caf15d9b77f71e8ad67c959d698" #input("Enter the 128/192/256 bit key in hex: ") 
 
 # state=int(state,16)
 # key=int(key,16)
 
 a=AES(key)
-print(a.w)
