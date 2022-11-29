@@ -25,6 +25,7 @@ class AES():
     [0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E],
     [0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF],
     [0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16]]
+        # self.inverse_sbox=[[0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB],[0x7c, 0xe3, 0x39]]
         self.rcon=[0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000, 0x1B000000, 0x36000000, 0x6c000000, 0xd8000000, 0xab000000, 0x4d000000]
         self.m=0x11b
         self.key=key
@@ -36,6 +37,48 @@ class AES():
         self.rounds=(self.keylen//8)+6
         self.key_expansion()
     
+    def encryption(self, plaintext):
+        self.state=[]
+        #initial state
+        for i in range (4):
+            self.state.append(plaintext[i*2:i*2+2]+plaintext[i*2+8:i*2+10]+plaintext[i*2+16:i*2+18]+plaintext[i*2+24:i*2+26])
+        #round 0: add round key
+        self.add_round_key(0)
+        #remaining rounds: sub -> shift -> mix -> add round key
+        for i in range(1, self.rounds):
+            pass
+    
+    def add_round_key(self, round):
+        for i in range(4):
+            self.state[i]=self.xor(self.state[i],self.w[round*4+i])
+
+    def shift_rows(self):
+        for i in range(4):
+            self.state[i]=self.state[i][2*i:]+self.state[i][:2*i]
+
+    def mix_columns(self):
+        mult_mx=[[2, 3, 1, 1], [1, 2, 3, 1], [1, 1, 2, 3], [3, 1, 1, 2]]
+        for i in range (4):
+            res=[]
+            for j in range(4):
+                a=mult_mx[i][j]
+                if a==1:
+                    res.append(self.state[j][i])
+                elif a==2:
+                    x=int(self.state[j][i],16)*2
+                    if x>255:
+                        x=self.xor(hex(x)[2:],hex(self.m)[2:])
+                        x=x[1:]
+                    res.append(x)
+                elif a==3:
+                    x=int(self.state[j][i],16)*2
+                    if x>255:
+                        x=self.xor(hex(x)[2:],hex(self.m)[2:])
+                        x=x[1:]
+                    x=self.xor(x, self.state[j][i])
+                    res.append(x)
+            
+    
     def key_expansion(self):
         self.w=[]
         for i in range(len(self.key)//8):
@@ -44,11 +87,10 @@ class AES():
         for i in range(len(self.key)//8, 4*(self.rounds+1)):
             temp=self.w[i-1]
             if i%4==0:
-                temp=self.sub_word(self.rot_word(temp))
+                temp=self.sub_bytes(self.rot_word(temp))
 
                 temp=self.xor(temp, hex(self.rcon[i//4-1])[2:].zfill(8))
             self.w.append(self.xor(self.w[i-4], temp))
-
 
     def xor(self, a, b):
         start=len(a)
@@ -60,7 +102,7 @@ class AES():
     def rot_word(self, word):
         return word[2:]+word[:2]
     
-    def sub_word(self, word):
+    def sub_bytes(self, word):
         for i in range(0,len(word),2):
             x,y=word[i],word[i+1]
             x,y=int(x,16),int(y,16)
@@ -69,10 +111,11 @@ class AES():
         return word
 
 
-state="0189fe7623abdc5445cdba3267ef9810" #input("Enter the 128 bit data block in hex: ")
+plain="0189fe7623abdc5445cdba3267ef9810" #input("Enter the 128 bit data block in hex: ")
 key="0f470caf15d9b77f71e8ad67c959d698" #input("Enter the 128/192/256 bit key in hex: ") 
 
 # state=int(state,16)
 # key=int(key,16)
 
 a=AES(key)
+a.encryption(plain)
