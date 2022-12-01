@@ -66,10 +66,6 @@ class AES():
         for i in range(4):
             self.state[i]=self.xor(self.state[i],self.w[round*4+i])
 
-    # def shift_rows(self):
-    #     for i in range(4):
-    #         self.state[i]=self.state[i][2*i:]+self.state[i][:2*i]
-
     def shift_rows(self):
         ans=[None for i in range(4)]
         ans[0]=self.state[0][0:2]+self.state[1][2:4]+self.state[2][4:6]+self.state[3][6:]
