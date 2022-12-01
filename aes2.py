@@ -101,10 +101,12 @@ class AES():
             temp=self.state[:]
             for i in range(4):
                 self.state[i]=self.inv_w[round*4+i]
+            self.state=[[self.state[0][0:2],self.state[1][0:2],self.state[2][0:2],self.state[3][0:2]],[self.state[0][2:4],self.state[1][2:4],self.state[2][2:4],self.state[3][2:4]],[self.state[0][4:6],self.state[1][4:6],self.state[2][4:6],self.state[3][4:6]],[self.state[0][6:],self.state[1][6:],self.state[2][6:],self.state[3][6:]]]
             self.inv_mix_columns()
+            self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
             for i in range(4):
                 self.inv_w[round*4+i]=self.state[i]
-            self.state[i]=temp[:]
+            self.state=temp[:]
         for i in range(4):
             self.state[i]=self.xor(self.state[i],self.inv_w[round*4+i])
 
@@ -163,14 +165,79 @@ class AES():
                 for k in range(4):
                     a=mult_mx[j][k]
                     if a==0x0e:
-                        pass
+                        for h in range(3):
+                            if h==0:
+                                x8=int(self.state[k][i],16)*2
+                            else:
+                                x8=int(x8,16)*2
+                            if x8>255:
+                                x8=self.xor(hex(x8)[2:],hex(self.m)[2:])
+                                x8=x8[1:]
+                            else:
+                                x8=hex(x8)[2:].zfill(2)
+                        for h in range(2):
+                            if h==0:
+                                x4=int(self.state[k][i],16)*2
+                            else:
+                                x4=int(x4,16)*2
+                            if x4>255:
+                                x4=self.xor(hex(x4)[2:],hex(self.m)[2:])
+                                x4=x4[1:]
+                            else:
+                                x4=hex(x4)[2:].zfill(2)
+                        x2=int(self.state[k][i],16)*2
+                        if x2>255:
+                            x2=self.xor(hex(x2)[2:],hex(self.m)[2:])
+                            x2=x2[1:]
+                        else:
+                            x2=hex(x2)[2:].zfill(2)
+                        x=self.xor(self.xor(x2,x8), x4)
+                        res.append(x)
                     elif a==0x0b:
-                        pass
+                        for h in range(3):
+                            if h==0:
+                                x8=int(self.state[k][i],16)*2
+                            else:
+                                x8=int(x8,16)*2
+                            if x8>255:
+                                x8=self.xor(hex(x8)[2:],hex(self.m)[2:])
+                                x8=x8[1:]
+                            else:
+                                x8=hex(x8)[2:].zfill(2)
+                        x2=int(self.state[k][i],16)*2
+                        if x2>255:
+                            x2=self.xor(hex(x2)[2:],hex(self.m)[2:])
+                            x2=x2[1:]
+                        else:
+                            x2=hex(x2)[2:].zfill(2)
+                        x=self.xor(self.xor(x2,x8), self.state[k][i])
+                        res.append(x)
                     elif a==0x0d:
-                        pass
+                        for h in range(3):
+                            if h==0:
+                                x8=int(self.state[k][i],16)*2
+                            else:
+                                x8=int(x8,16)*2
+                            if x8>255:
+                                x8=self.xor(hex(x8)[2:],hex(self.m)[2:])
+                                x8=x8[1:]
+                            else:
+                                x8=hex(x8)[2:].zfill(2)
+                        for h in range(2):
+                            if h==0:
+                                x4=int(self.state[k][i],16)*2
+                            else:
+                                x4=int(x4,16)*2
+                            if x4>255:
+                                x4=self.xor(hex(x4)[2:],hex(self.m)[2:])
+                                x4=x4[1:]
+                            else:
+                                x4=hex(x4)[2:].zfill(2)
+                        x=self.xor(self.xor(x4,x8), self.state[k][i])
+                        res.append(x)
                     elif a==0x09:
-                        for i in range(3):
-                            if i==0:
+                        for h in range(3):
+                            if h==0:
                                 x8=int(self.state[k][i],16)*2
                             else:
                                 x8=int(x8,16)*2
@@ -228,7 +295,8 @@ class AES():
 # a=AES(key)
 # cipher=a.encryption(plain)
 
-a=AES("0f1571c947d9e8590cb7add6af7f6798") #0f 15 71 c9 47 d9 e8 59 0c b7 ad d6 af 7f 67 98
+a=AES("0f1571c947d9e8590cb7add6af7f6798")
 cipher=a.encryption("0123456789abcdeffedcba9876543210")
-print("Cipher text: ", cipher)
-print(len(cipher))
+print("Cipher text:", cipher)
+plain=a.decryption("ff0b844a0853bf7c6934ab4364148fb9")
+print(plain)
