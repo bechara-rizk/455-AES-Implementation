@@ -41,28 +41,42 @@ class AES():
         self.state=[]
         #initial state
         for i in range (4):
-            self.state.append(plaintext[i*2:i*2+2]+plaintext[i*2+8:i*2+10]+plaintext[i*2+16:i*2+18]+plaintext[i*2+24:i*2+26])
+            # self.state.append(plaintext[i*2:i*2+2]+plaintext[i*2+8:i*2+10]+plaintext[i*2+16:i*2+18]+plaintext[i*2+24:i*2+26])
+            self.state.append(plaintext[i*8:i*8+8])
         #round 0: add round key
         self.add_round_key(0)
         #remaining rounds: sub -> shift -> mix -> add round key
-        for i in range(1, self.rounds):
-            for i in range(4):
-                self.state[i]=self.sub_bytes(self.state[i])
+        for i in range(1, self.rounds+1):
+            for j in range(4):
+                self.state[j]=self.sub_bytes(self.state[j])
             self.shift_rows()
-            self.state=[[self.state[0][0:2],self.state[1][0:2],self.state[2][0:2],self.state[3][0:2]],[self.state[0][2:4],self.state[1][2:4],self.state[2][2:4],self.state[3][2:4]],[self.state[0][4:6],self.state[1][4:6],self.state[2][4:6],self.state[3][4:6]],[self.state[0][6:],self.state[1][6:],self.state[2][6:],self.state[3][6:]]]
-            self.mix_columns()
-            self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
+            if i<self.rounds:
+                self.state=[[self.state[0][0:2],self.state[1][0:2],self.state[2][0:2],self.state[3][0:2]],[self.state[0][2:4],self.state[1][2:4],self.state[2][2:4],self.state[3][2:4]],[self.state[0][4:6],self.state[1][4:6],self.state[2][4:6],self.state[3][4:6]],[self.state[0][6:],self.state[1][6:],self.state[2][6:],self.state[3][6:]]]
+                self.mix_columns()
+                self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
             self.add_round_key(i)
-        cipher=self.state[0][0:2]+self.state[1][0:2]+self.state[2][0:2]+self.state[3][0:2]+self.state[0][2:4]+self.state[1][2:4]+self.state[2][2:4]+self.state[3][2:4]+self.state[0][4:6]+self.state[1][4:6]+self.state[2][4:6]+self.state[3][4:6]+self.state[0][6:]+self.state[1][6:]+self.state[2][6:]+self.state[3][6:]
+            pass
+        cipher=self.state[0]+self.state[1]+self.state[2]+self.state[3]
         return cipher
+    
+    def decryption(self, ciphertext):
+        pass
     
     def add_round_key(self, round):
         for i in range(4):
             self.state[i]=self.xor(self.state[i],self.w[round*4+i])
 
+    # def shift_rows(self):
+    #     for i in range(4):
+    #         self.state[i]=self.state[i][2*i:]+self.state[i][:2*i]
+
     def shift_rows(self):
-        for i in range(4):
-            self.state[i]=self.state[i][2*i:]+self.state[i][:2*i]
+        ans=[None for i in range(4)]
+        ans[0]=self.state[0][0:2]+self.state[1][2:4]+self.state[2][4:6]+self.state[3][6:]
+        ans[1]=self.state[1][0:2]+self.state[2][2:4]+self.state[3][4:6]+self.state[0][6:]
+        ans[2]=self.state[2][0:2]+self.state[3][2:4]+self.state[0][4:6]+self.state[1][6:]
+        ans[3]=self.state[3][0:2]+self.state[0][2:4]+self.state[1][4:6]+self.state[2][6:]
+        self.state=ans[:]
 
     def mix_columns(self):
         ans=[[None for i in range(4)] for i in range(4)]
@@ -125,10 +139,12 @@ class AES():
         return word
 
 
-plain="0189fe7623abdc5445cdba3267ef9810" #input("Enter the 128 bit data block in hex: ")
-key="0f470caf15d9b77f71e8ad67c959d698" #input("Enter the 128/192/256 bit key in hex: ") 
+# plain="0189fe7623abdc5445cdba3267ef9810" #input("Enter the 128 bit data block in hex: ")
+# key="0f470caf15d9b77f71e8ad67c959d698" #input("Enter the 128/192/256 bit key in hex: ") 
+# a=AES(key)
+# cipher=a.encryption(plain)
 
-a=AES(key)
-cipher=a.encryption(plain)
+a=AES("0f1571c947d9e8590cb7add6af7f6798") #0f 15 71 c9 47 d9 e8 59 0c b7 ad d6 af 7f 67 98
+cipher=a.encryption("0123456789abcdeffedcba9876543210")
 print("Cipher text: ", cipher)
 print(len(cipher))
