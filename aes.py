@@ -80,16 +80,18 @@ class AES():
             self.state.append(plaintext[i*8:i*8+8])
         #round 0: add round key
         self.__add_round_key(0)
-        #remaining rounds: sub -> shift -> mix -> add round key
+        #remaining rounds: sub -> shift -> mix (except last round) -> add round key
         for i in range(1, self.rounds+1):
             for j in range(4):
                 self.state[j]=self.__sub_bytes(self.state[j])
             self.__shift_rows()
             if i<self.rounds:
+                #mix_columns takes a different input format
                 self.state=[[self.state[0][0:2],self.state[1][0:2],self.state[2][0:2],self.state[3][0:2]],[self.state[0][2:4],self.state[1][2:4],self.state[2][2:4],self.state[3][2:4]],[self.state[0][4:6],self.state[1][4:6],self.state[2][4:6],self.state[3][4:6]],[self.state[0][6:],self.state[1][6:],self.state[2][6:],self.state[3][6:]]]
                 self.__mix_columns()
                 self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
             self.__add_round_key(i)
+        #final result
         cipher=self.state[0]+self.state[1]+self.state[2]+self.state[3]
         return cipher
     
@@ -111,25 +113,31 @@ class AES():
             self.state.append(ciphertext[i*8:i*8+8])
         #round 0: add round key
         self.__inv_add_round_key(self.rounds)
-        #remaining rounds: sub -> shift -> mix -> add round key
+        #remaining rounds: sub -> shift -> mix (except last round) -> add round key
         for i in range(self.rounds-1, -1, -1):
             for j in range(4):
                 self.state[j]=self.__inv_sub_bytes(self.state[j])
             self.__inv_shift_rows()
             if i>0:
+                #inv_mix_columns takes a different input format
                 self.state=[[self.state[0][0:2],self.state[1][0:2],self.state[2][0:2],self.state[3][0:2]],[self.state[0][2:4],self.state[1][2:4],self.state[2][2:4],self.state[3][2:4]],[self.state[0][4:6],self.state[1][4:6],self.state[2][4:6],self.state[3][4:6]],[self.state[0][6:],self.state[1][6:],self.state[2][6:],self.state[3][6:]]]
                 self.__inv_mix_columns()
                 self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
             self.__inv_add_round_key(i)
+        #final result
         plain=self.state[0]+self.state[1]+self.state[2]+self.state[3]
         return plain
     
     def __add_round_key(self, round):
+        #simple xor state with round keys
         for i in range(4):
             self.state[i]=self.__xor(self.state[i],self.w[round*4+i])
 
     def __inv_add_round_key(self, round):
-        if round<=self.rounds-1 and round>0:
+        #simple xor state with round keys 
+        #but need to multiply with inv_mix_columns in rounds 1 to self.rounds-1
+        if round<self.rounds and round>0:
+            #swapping key with state to multiply with inv_mix_columns then swapping back
             temp=self.state[:]
             for i in range(4):
                 self.state[i]=self.inv_w[round*4+i]
@@ -139,10 +147,12 @@ class AES():
             for i in range(4):
                 self.inv_w[round*4+i]=self.state[i]
             self.state=temp[:]
+        #simple xor state with round keys
         for i in range(4):
             self.state[i]=self.__xor(self.state[i],self.inv_w[round*4+i])
 
     def __shift_rows(self):
+        #row[i] is circular left shifted by i bytes
         ans=[None for i in range(4)]
         ans[0]=self.state[0][0:2]+self.state[1][2:4]+self.state[2][4:6]+self.state[3][6:]
         ans[1]=self.state[1][0:2]+self.state[2][2:4]+self.state[3][4:6]+self.state[0][6:]
@@ -151,6 +161,7 @@ class AES():
         self.state=ans[:]
     
     def __inv_shift_rows(self):
+        #row[i] is circular right shifted by i bytes
         ans=[None for i in range(4)]
         ans[0]=self.state[0][0:2]+self.state[3][2:4]+self.state[2][4:6]+self.state[1][6:]
         ans[1]=self.state[1][0:2]+self.state[0][2:4]+self.state[3][4:6]+self.state[2][6:]
@@ -159,6 +170,8 @@ class AES():
         self.state=ans[:]
 
     def __mix_columns(self):
+        #mix columns using matrix multiplication but modified to suit multiplication in GF(2^8) with mod m=0x11b
+        #multiplication in GF(2^8) is done using binary representation of numbers, shift left and xor with 0x11b if the number is greater than 255
         ans=[[None for i in range(4)] for i in range(4)]
         mult_mx=[[2, 3, 1, 1], [1, 2, 3, 1], [1, 1, 2, 3], [3, 1, 1, 2]]
         for i in range (4):
@@ -189,6 +202,8 @@ class AES():
         self.state=ans[:]
     
     def __inv_mix_columns(self):
+        #mix columns using matrix multiplication but modified to suit multiplication in GF(2^8) with mod m=0x11b
+        #multiplication in GF(2^8) is done using binary representation of numbers, shift left and xor with 0x11b if the number is greater than 255
         ans=[[None for i in range(4)] for i in range(4)]
         mult_mx=[[0x0e, 0x0b, 0x0d, 0x09], [0x09, 0x0e, 0x0b, 0x0d], [0x0d, 0x09, 0x0e, 0x0b], [0x0b, 0x0d, 0x09, 0x0e]]
         for i in range (4):
@@ -284,10 +299,14 @@ class AES():
         self.state=ans[:]
     
     def __key_expansion(self):
+        #initializing empty list
         self.w=[]
+
+        #copying initial key to list
         for i in range(len(self.key)//8):
             self.w.append(self.key[i*8:i*8+8])
 
+        #generating remaining round keys
         for i in range(len(self.key)//8, 4*(self.rounds+1)):
             temp=self.w[i-1]
             if i%4==0:
@@ -296,6 +315,7 @@ class AES():
             self.w.append(self.__xor(self.w[i-4], temp))
 
     def __xor(self, a, b):
+        #modified xor to keep leftmost 0s
         start=len(a)
         if len(a)!=len(b):
             raise Exception("xor: Length of a and b must be same")
@@ -303,9 +323,11 @@ class AES():
         return hex(a^b)[2:].zfill(start)
     
     def __rot_word(self, word):
+        #circular 1 byte left shift
         return word[2:]+word[:2]
     
     def __sub_bytes(self, word):
+        #substituting each byte with its s-box value
         for i in range(0,len(word),2):
             x,y=word[i],word[i+1]
             x,y=int(x,16),int(y,16)
@@ -314,6 +336,7 @@ class AES():
         return word
 
     def __inv_sub_bytes(self, word):
+        #substituting each byte with its inverse s-box value
         for i in range(0,len(word),2):
             x,y=word[i],word[i+1]
             x,y=int(x,16),int(y,16)
