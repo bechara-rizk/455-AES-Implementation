@@ -8,7 +8,7 @@ Output in hex
 """
 
 class AES():
-    def __init__(self, key):
+    def __init__(self, key, return_state=True, show_rounds=False):
         #initializing needed constants
         self.sbox=[[0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
     [0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0],
@@ -46,6 +46,10 @@ class AES():
         self.m=0x11b
         self.key=key
         self.keylen=len(self.key)
+        self.show_rounds=show_rounds
+        self.return_state=return_state
+        #will use cache to store rounds if need to display
+        self.cache=[]
 
         #validating input key
         self.key_valid=False
@@ -74,12 +78,14 @@ class AES():
         except:
             return "Invalid Plaintext: Plaintext must be in hex"
         
+        self.cache=[]
         self.state=[]
         #initial state
         for i in range (4):
             self.state.append(plaintext[i*8:i*8+8])
         #round 0: add round key
         self.__add_round_key(0)
+        self.cache.append(self.state[:])
         #remaining rounds: sub -> shift -> mix (except last round) -> add round key
         for i in range(1, self.rounds+1):
             for j in range(4):
@@ -91,8 +97,19 @@ class AES():
                 self.__mix_columns()
                 self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
             self.__add_round_key(i)
+            self.cache.append(self.state[:])
         #final result
         cipher=self.state[0]+self.state[1]+self.state[2]+self.state[3]
+        cipher_as_state=""
+        for i in range(4):
+            cipher_as_state+=self.state[0][i*2:i*2+2]+" "+self.state[1][i*2:i*2+2]+" "+self.state[2][i*2:i*2+2]+" "+self.state[3][i*2:i*2+2]
+            if i<3:
+                cipher_as_state+="\n"
+
+        if self.show_rounds:
+            return self.__display_rounds()
+        if self.return_state:
+            return cipher_as_state
         return cipher
     
     def decryption(self, ciphertext):
@@ -107,12 +124,14 @@ class AES():
         except:
             return "Invalid Ciphertext: Ciphertext must be in hex"
 
+        self.cache=[]
         self.inv_w=[self.w[i] for i in range(4*(self.rounds+1))]
         self.state=[]
         for i in range (4):
             self.state.append(ciphertext[i*8:i*8+8])
         #round 0: add round key
         self.__inv_add_round_key(self.rounds)
+        self.cache.append(self.state[:])
         #remaining rounds: sub -> shift -> mix (except last round) -> add round key
         for i in range(self.rounds-1, -1, -1):
             for j in range(4):
@@ -124,9 +143,32 @@ class AES():
                 self.__inv_mix_columns()
                 self.state=[self.state[0][0]+self.state[1][0]+self.state[2][0]+self.state[3][0],self.state[0][1]+self.state[1][1]+self.state[2][1]+self.state[3][1],self.state[0][2]+self.state[1][2]+self.state[2][2]+self.state[3][2],self.state[0][3]+self.state[1][3]+self.state[2][3]+self.state[3][3]]
             self.__inv_add_round_key(i)
+            self.cache.append(self.state[:])
         #final result
         plain=self.state[0]+self.state[1]+self.state[2]+self.state[3]
+        plain_as_state=""
+        for i in range(4):
+            plain_as_state+=self.state[0][i*2:i*2+2]+" "+self.state[1][i*2:i*2+2]+" "+self.state[2][i*2:i*2+2]+" "+self.state[3][i*2:i*2+2]
+            if i<3:
+                plain_as_state+="\n"
+
+        if self.show_rounds:
+            return self.__display_rounds()
+        if self.return_state:
+            return plain_as_state
         return plain
+
+    def __display_rounds(self):
+        res=""
+        res+="Round keys:\n"
+        for i in range(len(self.w)):
+            res+=(f"w[{i}] = {self.w[i]}\n")
+        res+="\nStates:\n"
+        for i in range(len(self.cache)):
+            res+=(f"Round {i}:\n")
+            for j in range(4):
+                res+=(f"{self.cache[i][0][j*2:j*2+2]} {self.cache[i][1][j*2:j*2+2]} {self.cache[i][2][j*2:j*2+2]} {self.cache[i][3][j*2:j*2+2]}\n")
+        return res
     
     def __add_round_key(self, round):
         #simple xor state with round keys
@@ -345,13 +387,9 @@ class AES():
         return word
 
 
-# plain="0189fe7623abdc5445cdba3267ef9810" #input("Enter the 128 bit data block in hex: ")
-# key="0f470caf15d9b77f71e8ad67c959d698" #input("Enter the 128/192/256 bit key in hex: ") 
-# a=AES(key)
-# cipher=a.encryption(plain)
-
-a=AES("0f1571c947d9e8590cb7add6af7f6798")
-cipher=a.encryption("0123456789abcdeffedcba9876543210")
-print("Ciphertext:", cipher)
-plain=a.decryption("ff0b844a0853bf7c6934ab4364148fb9")
-print("Plaintext:", plain)
+if __name__=="__main__":
+    a=AES("0f1571c947d9e8590cb7add6af7f6798", True, True)
+    cipher=a.encryption("0123456789abcdeffedcba9876543210")
+    print(cipher)
+    plain=a.decryption("ff0b844a0853bf7c6934ab4364148fb9")
+    print(plain)
