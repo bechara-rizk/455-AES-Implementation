@@ -100,7 +100,7 @@ class AES():
             self.cache.append(self.state[:])
         #final result
         cipher=self.state[0]+self.state[1]+self.state[2]+self.state[3]
-        cipher_as_state=[]
+        cipher_as_state=['Final State:']
         for i in range(4):
             cipher_as_state.append(self.state[0][i*2:i*2+2]+" "+self.state[1][i*2:i*2+2]+" "+self.state[2][i*2:i*2+2]+" "+self.state[3][i*2:i*2+2])
 
@@ -144,7 +144,7 @@ class AES():
             self.cache.append(self.state[:])
         #final result
         plain=self.state[0]+self.state[1]+self.state[2]+self.state[3]
-        plain_as_state=[]
+        plain_as_state=['Final State:']
         for i in range(4):
             plain_as_state.append(self.state[0][i*2:i*2+2]+" "+self.state[1][i*2:i*2+2]+" "+self.state[2][i*2:i*2+2]+" "+self.state[3][i*2:i*2+2])
 
@@ -167,16 +167,17 @@ class AES():
         return res
 
     def __display_rounds_web(self):
-        res=[]
-        res.append("Round keys:")
+        text=[]
+        key=[]
+        key.append("Round keys:")
         for i in range(len(self.w)):
-            res.append(f"w[{i}] = {self.w[i]}")
-        res.append("States:")
+            key.append(f"w[{i}] = {self.w[i]}")
+        text.append("States:")
         for i in range(len(self.cache)):
-            res.append(f"Round {i}:")
+            text.append(f"Round {i}{' (Final State)' if i==len(self.cache)-1 else ''}:")
             for j in range(4):
-                res.append(f"{self.cache[i][0][j*2:j*2+2]} {self.cache[i][1][j*2:j*2+2]} {self.cache[i][2][j*2:j*2+2]} {self.cache[i][3][j*2:j*2+2]}")
-        return res
+                text.append(f"{self.cache[i][0][j*2:j*2+2]} {self.cache[i][1][j*2:j*2+2]} {self.cache[i][2][j*2:j*2+2]} {self.cache[i][3][j*2:j*2+2]}")
+        return text,key
     
     def __add_round_key(self, round):
         #simple xor state with round keys
