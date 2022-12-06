@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES Implementation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <style>
+        body {
+            padding-top: 1%;
+            background-color: aliceblue;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container text-center">
+        <h1>EECE 455 - AES implementation</h1>
+        <h4>by Bechara Rizk, Tia Al Hajj, Yara Muslimany, Layan Yamani</h4>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="container input-group p-2" style="width:95%; max-width: 700px;">
+            <span class="input-group-text">Key</span>
+            <input type="text" name="key" value="{{previouskey}}" class="form-control">
+        </div>
+        <div class="container input-group p-2" style="width:95%; max-width: 700px;">
+            <span class="input-group-text">Text</span>
+            <input type="text" name="text" value="{{previoustext}}" class="form-control">
+        </div>
+
+        <div class="p-2 text-center">
+            <button type="submit" name="encrypt" value="encrypt" class="btn btn-success btn-lg">Encrypt</button>
+            <button type="submit" name="decrypt" value="decrypt" class="btn btn-success btn-lg">Decrypt</button>
+            <div class="form-switch m-3">
+                <input class="form-check-input" type="checkbox" id="click" name="show" {{clicked}}>
+                <label class="form-check-label" for="click">Show rounds and keys</label>
+            </div>
+        </div>
+    </form>
+    
+    <div class="container text-center" style="width:99%; max-width: 700px;">
+        <div class="row">
+            {% if not key %}
+            <div class="col">
+                {% for i in text %}
+                <p>{{i}}</p>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="col" style="overflow-y: scroll; height:350px;">
+                {% for i in text %}
+                <p>{{i}}</p>
+                {% endfor %}
+            </div>
+            <div class="col" style="overflow-y: scroll; height:350px;">
+                {% for i in key %}
+                <p>{{i}}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+</body>
+
+</html>
