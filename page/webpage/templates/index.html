@@ -12,6 +12,12 @@
             padding-top: 1%;
             background-color: aliceblue;
         }
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+
+        }
     </style>
 </head>
 
@@ -41,7 +47,7 @@
             </div>
         </div>
     </form>
-    
+
     <div class="container text-center" style="width:99%; max-width: 700px;">
         <div class="row">
             {% if not key %}
@@ -51,19 +57,25 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="col" style="overflow-y: scroll; height:350px;">
+            <div class="col" style="overflow-y: scroll; height:250px;">
                 {% for i in text %}
                 <p>{{i}}</p>
                 {% endfor %}
             </div>
-            <div class="col" style="overflow-y: scroll; height:350px;">
+            <div class="col" style="overflow-y: scroll; height:250px;">
                 {% for i in key %}
                 <p>{{i}}</p>
                 {% endfor %}
             </div>
             {% endif %}
-          </div>
+        </div>
     </div>
+
+    <footer class="text-center text-lg-start bg-light text-muted">
+        <div class="text-center p-1" style="background-color: rgba(0, 0, 0, 0.05);">
+            <a class="text-reset fw-bold" href="https://github.com/bechara-rizk/455-AES-Implementation.git">Code on GitHub</a>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
