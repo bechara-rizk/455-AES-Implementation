@@ -72,7 +72,7 @@ class AES():
         
         #validating input plaintext
         if len(plaintext)!=32:
-            return ["Invalid Plaintext: Plaintext must be 128 bits"]
+            return ["Invalid Plaintext: Plaintext must be 128 bits and in hex"]
         try:
             int(plaintext,16)
         except:
